@@ -129,8 +129,8 @@ local function secureNotify(wType, title, content)
 	if secureWarnings[wType] then return end
 	secureWarnings[wType] = true
 	task.spawn(function()
-		while not HeliXGui or not HeliXGui.Notify do task.wait(0.5) end
-		HeliXGui:Notify({
+		while not HeliXLib or not HeliXLib.Notify do task.wait(0.5) end
+		HeliXLib:Notify({
 			Title = title,
 			Content = content,
 			Duration = 8,
@@ -1167,7 +1167,7 @@ local function LoadConfiguration(Configuration)
 	if not success then warn('HeliX had an issue decoding the configuration file, please try deleting the file and reopening the interface.') return end
 
 	-- Iterate through current UI elements' flags
-	for FlagName, Flag in pairs(HeliXGui.Flags) do
+	for FlagName, Flag in pairs(HeliXLib.Flags) do
 		local FlagValue = Data[FlagName]
 
 		if (typeof(FlagValue) == 'boolean' and FlagValue == false) or FlagValue then
@@ -1200,7 +1200,7 @@ local function SaveConfiguration()
 	end
 
 	local Data = {}
-	for i, v in pairs(HeliXGui.Flags) do
+	for i, v in pairs(HeliXLib.Flags) do
 		if v.Type == "ColorPicker" then
 			Data[i] = PackColor(v.Color)
 		else
@@ -1463,9 +1463,9 @@ local function Hide(notify: boolean?)
 	Debounce = true
 	if notify then
 		if useMobilePrompt then 
-			HeliXGui:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping 'Show'.", Duration = 7, Image = 4400697855})
+			HeliXLib:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping 'Show'.", Duration = 7, Image = 4400697855})
 		else
-			HeliXGui:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping " .. tostring(getSetting("General", "HeliXGuiOpen")) .. ".", Duration = 7, Image = 4400697855})
+			HeliXLib:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping " .. tostring(getSetting("General", "HeliXGuiOpen")) .. ".", Duration = 7, Image = 4400697855})
 		end
 	end
 
@@ -1736,7 +1736,7 @@ function HeliXLib:CreateWindow(Settings)
 	if not correctBuild and not Settings.DisableBuildWarnings then
 		task.delay(3, 
 			function() 
-				HeliXGui:Notify({Title = 'Build Mismatch', Content = 'HeliX may encounter issues as you are running an incompatible interface version ('.. ((HeliXGui:FindFirstChild('Build') and HeliXGui.Build.Value) or 'No Build') ..').\n\nThis version of HeliX is intended for interface build '..InterfaceBuild..'.\n\nTry rejoining and then run the script twice.', Image = 4335487866, Duration = 15})		
+				HeliXLib:Notify({Title = 'Build Mismatch', Content = 'HeliX may encounter issues as you are running an incompatible interface version ('.. ((HeliXGui:FindFirstChild('Build') and HeliXGui.Build.Value) or 'No Build') ..').\n\nThis version of HeliX is intended for interface build '..InterfaceBuild..'.\n\nTry rejoining and then run the script twice.', Image = 4335487866, Duration = 15})		
 			end)
 	end
 
@@ -2030,7 +2030,7 @@ function HeliXLib:CreateWindow(Settings)
 					KeyMain.Visible = false
 					if Settings.KeySettings.SaveKey then
 						callSafely(writefile, HeliXGuiFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension, FoundKey)
-						HeliXGui:Notify({Title = "Access Granted", Content = "The key for this script has been saved successfully.", Image = 3605522284})
+						HeliXLib:Notify({Title = "Access Granted", Content = "The key for this script has been saved successfully.", Image = 3605522284})
 					end
 				else
 					if AttemptsRemaining == 0 then
@@ -2055,7 +2055,7 @@ function HeliXLib:CreateWindow(Settings)
 				fadeOutKeyUI(KeyMain)
 				task.wait(0.51)
 				Passthrough = true
-				HeliXGui:Destroy()
+				HeliXLib:Destroy()
 				KeyUI:Destroy()
 			end)
 		else
@@ -2500,7 +2500,7 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and ColorPickerSettings.Flag then
-					HeliXGui.Flags[ColorPickerSettings.Flag] = ColorPickerSettings
+					HeliXLib.Flags[ColorPickerSettings.Flag] = ColorPickerSettings
 				end
 			end
 
@@ -2769,7 +2769,7 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and InputSettings.Flag then
-					HeliXGui.Flags[InputSettings.Flag] = InputSettings
+					HeliXLib.Flags[InputSettings.Flag] = InputSettings
 				end
 			end
 
@@ -3119,7 +3119,7 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and DropdownSettings.Flag then
-					HeliXGui.Flags[DropdownSettings.Flag] = DropdownSettings
+					HeliXLib.Flags[DropdownSettings.Flag] = DropdownSettings
 				end
 			end
 
@@ -3255,7 +3255,7 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and KeybindSettings.Flag then
-					HeliXGui.Flags[KeybindSettings.Flag] = KeybindSettings
+					HeliXLib.Flags[KeybindSettings.Flag] = KeybindSettings
 				end
 			end
 
@@ -3413,7 +3413,7 @@ function HeliXLib:CreateWindow(Settings)
 			if not ToggleSettings.Ext then
 				if Settings.ConfigurationSaving then
 					if Settings.ConfigurationSaving.Enabled and ToggleSettings.Flag then
-						HeliXGui.Flags[ToggleSettings.Flag] = ToggleSettings
+						HeliXLib.Flags[ToggleSettings.Flag] = ToggleSettings
 					end
 				end
 			end
@@ -3601,7 +3601,7 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and SliderSettings.Flag then
-					HeliXGui.Flags[SliderSettings.Flag] = SliderSettings
+					HeliXLib.Flags[SliderSettings.Flag] = SliderSettings
 				end
 			end
 
@@ -3682,9 +3682,9 @@ function HeliXLib:CreateWindow(Settings)
 	function Window.ModifyTheme(NewTheme)
 		local success = pcall(ChangeTheme, NewTheme)
 		if not success then
-			HeliXGui:Notify({Title = 'Unable to Change Theme', Content = 'We were unable to find that theme on file.', Image = 4400704299})
+			HeliXLib:Notify({Title = 'Unable to Change Theme', Content = 'We were unable to find that theme on file.', Image = 4400704299})
 		else
-			HeliXGui:Notify({Title = 'Theme Changed', Content = 'Successfully changed theme to '..(typeof(NewTheme) == 'string' and NewTheme or 'Custom Theme')..'.', Image = 4483362748})
+			HeliXLib:Notify({Title = 'Theme Changed', Content = 'Successfully changed theme to '..(typeof(NewTheme) == 'string' and NewTheme or 'Custom Theme')..'.', Image = 4483362748})
 		end
 	end
 
@@ -3882,15 +3882,15 @@ function HeliXLib:LoadConfiguration()
 				end
 			else
 				notified = true
-				HeliXGui:Notify({Title = "HeliX Configurations", Content = "We couldn't enable configuration saving because your environment does not expose filesystem support.", Image = 4384402990})
+				HeliXLib:Notify({Title = "HeliX Configurations", Content = "We couldn't enable configuration saving because your environment does not expose filesystem support.", Image = 4384402990})
 			end
 		end)
 
 		if success and loaded and not notified then
-			HeliXGui:Notify({Title = "HeliX Configurations", Content = "The configuration file for this script has been loaded from a previous session.", Image = 4384403532})
+			HeliXLib:Notify({Title = "HeliX Configurations", Content = "The configuration file for this script has been loaded from a previous session.", Image = 4384403532})
 		elseif not success and not notified then
 			warn('HeliX Configurations Error | '..tostring(result))
-			HeliXGui:Notify({Title = "HeliX Configurations", Content = "We encountered an issue while loading your configuration.\n\nCheck the Developer Console for more information.", Image = 4384402990})
+			HeliXLib:Notify({Title = "HeliX Configurations", Content = "We encountered an issue while loading your configuration.\n\nCheck the Developer Console for more information.", Image = 4384402990})
 		end
 	end
 
@@ -4126,7 +4126,7 @@ end
 --end
 
 task.delay(4, function()
-	HeliXGui.LoadConfiguration()
+	HeliXLib.LoadConfiguration()
 	if Main:FindFirstChild('Notice') and Main.Notice.Visible then
 		TweenService:Create(Main.Notice, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut), {Size = UDim2.new(0, 100, 0, 25), Position = UDim2.new(0.5, 0, 0, -100), BackgroundTransparency = 1}):Play()
 		TweenService:Create(Main.Notice.Title, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
