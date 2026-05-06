@@ -84,11 +84,11 @@ local customAssetBaseUrl = nil
 local secureMode = false
 if _getgenv then
 	local ok, result = pcall(function()
-		return _getgenv().DISABLE_HELIX_REQUESTS or _getgenv().DISABLE_HeliXLib_REQUESTS
+		return _getgenv().DISABLE_HELIX_REQUESTS or _getgenv().DISABLE_HeliXGui_REQUESTS
 	end)
 	if ok and result then requestsDisabled = true end
 	local ok2, result2 = pcall(function()
-		return _getgenv().HELIX_ASSET_ID or _getgenv().HeliXLib_ASSET_ID
+		return _getgenv().HELIX_ASSET_ID or _getgenv().HeliXGui_ASSET_ID
 	end)
 	if ok2 and type(result2) == "number" then customAssetId = result2 end
 	local okAssetBase, resultAssetBase = pcall(function()
@@ -104,7 +104,7 @@ if _getgenv then
 		customKeyAssetId = resultKeyAsset
 	end
 	local ok3, result3 = pcall(function()
-		return _getgenv().HELIX_SECURE or _getgenv().HeliXLib_SECURE
+		return _getgenv().HELIX_SECURE or _getgenv().HeliXGui_SECURE
 	end)
 	if ok3 and result3 then secureMode = true end
 end
@@ -125,25 +125,25 @@ local function secureNotify(wType, title, content)
 	if secureWarnings[wType] then return end
 	secureWarnings[wType] = true
 	task.spawn(function()
-		while not HeliXLib or not HeliXLib.Notify do task.wait(0.5) end
-		HeliXLib:Notify({
+		while not HeliXGui or not HeliXGui.Notify do task.wait(0.5) end
+		HeliXGui:Notify({
 			Title = title,
 			Content = content,
 			Duration = 8,
 		})
 	end)
 end
-local InterfaceBuild = 'HLX-A1'
+local InterfaceBuild = 'UU2NX'
 local Release = "HeliX Core 0.1"
-local HeliXLibFolder = "HeliX"
-local ConfigurationFolder = HeliXLibFolder.."/Configurations"
+local HeliXGuiFolder = "HeliX"
+local ConfigurationFolder = HeliXGuiFolder.."/Configurations"
 local ConfigurationExtension = ".hlix"
 local settingsTable = {
 	General = {
 		-- if needs be in order just make getSetting(name)
-		HeliXLibOpen = {Type = 'bind', Value = 'K', Name = 'HeliX Toggle Key'},
+		HeliXGuiOpen = {Type = 'bind', Value = 'K', Name = 'HeliX Toggle Key'},
 		-- buildwarnings
-		-- HeliXLibprompts
+		-- HeliXGuiprompts
 
 	},
 	System = {}
@@ -151,7 +151,7 @@ local settingsTable = {
 
 -- Settings that have been overridden by the developer. These will not be saved to the user's configuration file
 -- Overridden settings always take precedence over settings in the configuration file, and are cleared if the user changes the setting in the UI
-local overriddenSettings: { [string]: any } = {} -- For example, overriddenSettings["System.HeliXLibOpen"] = "J"
+local overriddenSettings: { [string]: any } = {} -- For example, overriddenSettings["System.HeliXGuiOpen"] = "J"
 local function overrideSetting(category: string, name: string, value: any)
 	overriddenSettings[category .. "." .. name] = value
 end
@@ -211,16 +211,16 @@ local function loadSettings()
 	local file = nil
 
 	local success, result =	pcall(function()
-		if callSafely(isfolder, HeliXLibFolder) then
-			if callSafely(isfile, HeliXLibFolder..'/settings'..ConfigurationExtension) then
-				file = callSafely(readfile, HeliXLibFolder..'/settings'..ConfigurationExtension)
+		if callSafely(isfolder, HeliXGuiFolder) then
+			if callSafely(isfile, HeliXGuiFolder..'/settings'..ConfigurationExtension) then
+				file = callSafely(readfile, HeliXGuiFolder..'/settings'..ConfigurationExtension)
 			end
 		end
 
 		-- for debug in studio
 		if useStudio then
 			file = [[
-	{"General":{"HeliXLibOpen":{"Value":"K","Type":"bind","Name":"HeliX Toggle Key","Element":{"HoldToInteract":false,"Ext":true,"Name":"HeliX Toggle Key","Set":null,"CallOnChange":true,"Callback":null,"CurrentKeybind":"K"}}},"System":{}}
+	{"General":{"HeliXGuiOpen":{"Value":"K","Type":"bind","Name":"HeliX Toggle Key","Element":{"HoldToInteract":false,"Ext":true,"Name":"HeliX Toggle Key","Set":null,"CallOnChange":true,"Callback":null,"CurrentKeybind":"K"}}},"System":{}}
 ]]
 		end
 
@@ -448,16 +448,16 @@ local HeliXLib = {
 
 -- Interface Management
 
-local HeliXLibAssetId = customAssetId or 10804731440
-local HeliXLib = useStudio and script.Parent:FindFirstChild('HeliXLib') or game:GetObjects("rbxassetid://"..HeliXLibAssetId)[1]
+local HeliXGuiAssetId = customAssetId or 10804731440
+local HeliXGui = useStudio and script.Parent:FindFirstChild('HeliXGui') or game:GetObjects("rbxassetid://"..HeliXGuiAssetId)[1]
 local buildAttempts = 0
 local correctBuild = false
 local warned
 local globalLoaded
-local HeliXLibDestroyed = false -- True when HeliXLib:Destroy() is called
+local HeliXGuiDestroyed = false -- True when HeliXGui:Destroy() is called
 
 repeat
-	if HeliXLib:FindFirstChild('Build') and HeliXLib.Build.Value == InterfaceBuild then
+	if HeliXGui:FindFirstChild('Build') and HeliXGui.Build.Value == InterfaceBuild then
 		correctBuild = true
 		break
 	end
@@ -466,40 +466,40 @@ repeat
 
 	if not warned then
 		warn('HeliX | Build Mismatch')
-		print('HeliX may encounter issues as you are running an incompatible interface version ('.. ((HeliXLib:FindFirstChild('Build') and HeliXLib.Build.Value) or 'No Build') ..').\n\nThis version of HeliX is intended for interface build '..InterfaceBuild..'.')
+		print('HeliX may encounter issues as you are running an incompatible interface version ('.. ((HeliXGui:FindFirstChild('Build') and HeliXGui.Build.Value) or 'No Build') ..').\n\nThis version of HeliX is intended for interface build '..InterfaceBuild..'.')
 		warned = true
 	end
 
 	local toDestroy
-	toDestroy, HeliXLib = HeliXLib, useStudio and script.Parent:FindFirstChild('HeliXLib') or game:GetObjects("rbxassetid://"..HeliXLibAssetId)[1]
+	toDestroy, HeliXGui = HeliXGui, useStudio and script.Parent:FindFirstChild('HeliXGui') or game:GetObjects("rbxassetid://"..HeliXGuiAssetId)[1]
 	if toDestroy and not useStudio then toDestroy:Destroy() end
 
 	buildAttempts = buildAttempts + 1
 until buildAttempts >= 2
 
-HeliXLib.Enabled = false
+HeliXGui.Enabled = false
 
 if gethui then
-	HeliXLib.Parent = gethui()
+	HeliXGui.Parent = gethui()
 elseif syn and syn.protect_gui then 
-	syn.protect_gui(HeliXLib)
-	HeliXLib.Parent = CoreGui
+	syn.protect_gui(HeliXGui)
+	HeliXGui.Parent = CoreGui
 elseif not useStudio and CoreGui:FindFirstChild("RobloxGui") then
-	HeliXLib.Parent = CoreGui:FindFirstChild("RobloxGui")
+	HeliXGui.Parent = CoreGui:FindFirstChild("RobloxGui")
 elseif not useStudio then
-	HeliXLib.Parent = CoreGui
+	HeliXGui.Parent = CoreGui
 end
 
 if gethui then
 	for _, Interface in ipairs(gethui():GetChildren()) do
-		if Interface.Name == HeliXLib.Name and Interface ~= HeliXLib then
+		if Interface.Name == HeliXGui.Name and Interface ~= HeliXGui then
 			Interface.Enabled = false
 			Interface.Name = "HeliX-Old"
 		end
 	end
 elseif not useStudio then
 	for _, Interface in ipairs(CoreGui:GetChildren()) do
-		if Interface.Name == HeliXLib.Name and Interface ~= HeliXLib then
+		if Interface.Name == HeliXGui.Name and Interface ~= HeliXGui then
 			Interface.Enabled = false
 			Interface.Name = "HeliX-Old"
 		end
@@ -511,8 +511,8 @@ if secureMode and not customAssetId then
 end
 
 do
-	local AssetPath = HeliXLibFolder.."/Assets"
-	local AssetBaseURL = customAssetBaseUrl or "https://github.com/mkpro76/HelixLib/blob/main/assets/"
+	local AssetPath = HeliXGuiFolder.."/Assets"
+	local AssetBaseURL = customAssetBaseUrl or "https://github.com/mkpro76/HeliXGui/blob/main/assets/"
 
 	local assetFiles = {
 		["111263549366178"] = AssetBaseURL.."111263549366178.png?raw=true",
@@ -544,7 +544,7 @@ do
 
 	if hasCustomAsset and hasFilesystem then
 		local ok, err = pcall(function()
-			ensureFolder(HeliXLibFolder)
+			ensureFolder(HeliXGuiFolder)
 			ensureFolder(AssetPath)
 
 			local function nextMissing()
@@ -590,36 +590,36 @@ do
 	end
 
 
-	HeliXLib.Main.Shadow.Image.Image = customAssets[tostring(5587865193)]
-	HeliXLib.Main.Topbar.Hide.Image = customAssets[tostring(10137832201)]
-	HeliXLib.Main.Topbar.ChangeSize.Image = customAssets[tostring(10137941941)]
-	HeliXLib.Main.Topbar.Settings.Image = customAssets[tostring(80503127983237)]
-	HeliXLib.Main.Topbar.Icon.Image = customAssets[tostring(78137979054938)]
-	HeliXLib.Main.Topbar.Search.Image = customAssets["IconMagnifyingGlass2"]
-	HeliXLib.Main.Topbar.Search.ImageRectOffset = Vector2.new(0, 0)
-	HeliXLib.Main.Topbar.Search.ImageRectSize = Vector2.new(0, 0)
-	HeliXLib.Main.Elements.Template.Toggle.Switch.Shadow.Image = customAssets[tostring(3602733521)]
-	HeliXLib.Main.Elements.Template.Slider.Main.Shadow.Image = customAssets[tostring(3602733521)]
-	HeliXLib.Main.Elements.Template.Dropdown.Toggle.Image = customAssets["IconChevronTopMedium"]
-	HeliXLib.Main.Elements.Template.Dropdown.Toggle.ImageRectOffset = Vector2.new(0, 0)
-	HeliXLib.Main.Elements.Template.Dropdown.Toggle.ImageRectSize = Vector2.new(0, 0)
-	HeliXLib.Main.Elements.Template.Label.Icon.Image = customAssets[tostring(11745872910)]
-	HeliXLib.Main.Elements.Template.ColorPicker.CPBackground.MainCP.Image = customAssets[tostring(11413591840)]
-	HeliXLib.Main.Elements.Template.ColorPicker.CPBackground.MainCP.MainPoint.Image = customAssets[tostring(3259050989)]
-	HeliXLib.Main.Elements.Template.ColorPicker.ColorSlider.SliderPoint.Image = customAssets[tostring(3259050989)]
-	HeliXLib.Main.TabList.Template.Image.Image = customAssets[tostring(4483362458)]
-	HeliXLib.Main.Search.Search.Image = customAssets[tostring(18458939117)]
-	HeliXLib.Main.Search.Shadow.Image = customAssets[tostring(5587865193)]
-	HeliXLib.Notifications.Template.Icon.Image = customAssets[tostring(77891951053543)]
-	HeliXLib.Notifications.Template.Shadow.Image = customAssets[tostring(3523728077)]
-	HeliXLib.Loading.Banner.Image = customAssets[tostring(111263549366178)]
+	HeliXGui.Main.Shadow.Image.Image = customAssets[tostring(5587865193)]
+	HeliXGui.Main.Topbar.Hide.Image = customAssets[tostring(10137832201)]
+	HeliXGui.Main.Topbar.ChangeSize.Image = customAssets[tostring(10137941941)]
+	HeliXGui.Main.Topbar.Settings.Image = customAssets[tostring(80503127983237)]
+	HeliXGui.Main.Topbar.Icon.Image = customAssets[tostring(78137979054938)]
+	HeliXGui.Main.Topbar.Search.Image = customAssets["IconMagnifyingGlass2"]
+	HeliXGui.Main.Topbar.Search.ImageRectOffset = Vector2.new(0, 0)
+	HeliXGui.Main.Topbar.Search.ImageRectSize = Vector2.new(0, 0)
+	HeliXGui.Main.Elements.Template.Toggle.Switch.Shadow.Image = customAssets[tostring(3602733521)]
+	HeliXGui.Main.Elements.Template.Slider.Main.Shadow.Image = customAssets[tostring(3602733521)]
+	HeliXGui.Main.Elements.Template.Dropdown.Toggle.Image = customAssets["IconChevronTopMedium"]
+	HeliXGui.Main.Elements.Template.Dropdown.Toggle.ImageRectOffset = Vector2.new(0, 0)
+	HeliXGui.Main.Elements.Template.Dropdown.Toggle.ImageRectSize = Vector2.new(0, 0)
+	HeliXGui.Main.Elements.Template.Label.Icon.Image = customAssets[tostring(11745872910)]
+	HeliXGui.Main.Elements.Template.ColorPicker.CPBackground.MainCP.Image = customAssets[tostring(11413591840)]
+	HeliXGui.Main.Elements.Template.ColorPicker.CPBackground.MainCP.MainPoint.Image = customAssets[tostring(3259050989)]
+	HeliXGui.Main.Elements.Template.ColorPicker.ColorSlider.SliderPoint.Image = customAssets[tostring(3259050989)]
+	HeliXGui.Main.TabList.Template.Image.Image = customAssets[tostring(4483362458)]
+	HeliXGui.Main.Search.Search.Image = customAssets[tostring(18458939117)]
+	HeliXGui.Main.Search.Shadow.Image = customAssets[tostring(5587865193)]
+	HeliXGui.Notifications.Template.Icon.Image = customAssets[tostring(77891951053543)]
+	HeliXGui.Notifications.Template.Shadow.Image = customAssets[tostring(3523728077)]
+	HeliXGui.Loading.Banner.Image = customAssets[tostring(111263549366178)]
 
 end -- custom asset block
 
 local minSize = Vector2.new(1024, 768)
 local useMobileSizing
 
-if HeliXLib.AbsoluteSize.X < minSize.X and HeliXLib.AbsoluteSize.Y < minSize.Y then
+if HeliXGui.AbsoluteSize.X < minSize.X and HeliXGui.AbsoluteSize.Y < minSize.Y then
 	useMobileSizing = true
 end
 
@@ -631,13 +631,13 @@ end
 
 -- Object Variables
 
-local Main = HeliXLib.Main
-local MPrompt = HeliXLib:FindFirstChild('Prompt')
+local Main = HeliXGui.Main
+local MPrompt = HeliXGui:FindFirstChild('Prompt')
 local Topbar = Main.Topbar
 local Elements = Main.Elements
 local LoadingFrame = Main.LoadingFrame
 local TabList = Main.TabList
-local dragBar = HeliXLib:FindFirstChild('Drag')
+local dragBar = HeliXGui:FindFirstChild('Drag')
 local dragInteract = dragBar and dragBar.Interact or nil
 local dragBarCosmetic = dragBar and dragBar.Drag or nil
 
@@ -648,11 +648,11 @@ local expandedTopbarSize = UDim2.new(0, 560, 0, 48)
 local minimisedWindowSize = UDim2.new(0, 530, 0, 48)
 local hiddenWindowSize = UDim2.new(0, 530, 0, 0)
 
-HeliXLib.DisplayOrder = 100
+HeliXGui.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
-local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/mkpro76/HelixLib/refs/heads/main/icons.lua')
+local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/mkpro76/HeliXGui/refs/heads/main/icons.lua')
 -- Variables
 
 local CFileName = nil
@@ -661,8 +661,8 @@ local Minimised = false
 local Hidden = false
 local Debounce = false
 local searchOpen = false
-local Notifications = HeliXLib.Notifications
-local keybindConnections = {} -- For storing keybind connections to disconnect when HeliXLib is destroyed
+local Notifications = HeliXGui.Notifications
+local keybindConnections = {} -- For storing keybind connections to disconnect when HeliXGui is destroyed
 
 local SelectedTheme = HeliXLib.Theme.Default
 local function ensureNamedChild(parent, className, name)
@@ -876,7 +876,7 @@ local function applyShellIdentity()
 	Main.BorderSizePixel = 0
 	Main.BackgroundColor3 = SelectedTheme.Background
 	stylePanel(Main, "window")
-	applyTypography(HeliXLib)
+	applyTypography(HeliXGui)
 
 	Topbar.BackgroundColor3 = SelectedTheme.Topbar
 	Topbar.BorderSizePixel = 0
@@ -955,17 +955,17 @@ local function ChangeTheme(Theme)
 		SelectedTheme = Theme
 	end
 
-	HeliXLib.Main.BackgroundColor3 = SelectedTheme.Background
-	HeliXLib.Main.Topbar.BackgroundColor3 = SelectedTheme.Topbar
-	HeliXLib.Main.Topbar.CornerRepair.BackgroundColor3 = SelectedTheme.Topbar
-	HeliXLib.Main.Shadow.Image.ImageColor3 = SelectedTheme.Shadow
+	HeliXGui.Main.BackgroundColor3 = SelectedTheme.Background
+	HeliXGui.Main.Topbar.BackgroundColor3 = SelectedTheme.Topbar
+	HeliXGui.Main.Topbar.CornerRepair.BackgroundColor3 = SelectedTheme.Topbar
+	HeliXGui.Main.Shadow.Image.ImageColor3 = SelectedTheme.Shadow
 
-	HeliXLib.Main.Topbar.ChangeSize.ImageColor3 = SelectedTheme.TextMuted
-	HeliXLib.Main.Topbar.Hide.ImageColor3 = SelectedTheme.TextMuted
-	HeliXLib.Main.Topbar.Search.ImageColor3 = SelectedTheme.Accent
+	HeliXGui.Main.Topbar.ChangeSize.ImageColor3 = SelectedTheme.TextMuted
+	HeliXGui.Main.Topbar.Hide.ImageColor3 = SelectedTheme.TextMuted
+	HeliXGui.Main.Topbar.Search.ImageColor3 = SelectedTheme.Accent
 	if Topbar:FindFirstChild('Settings') then
-		HeliXLib.Main.Topbar.Settings.ImageColor3 = SelectedTheme.TextMuted
-		HeliXLib.Main.Topbar.Divider.BackgroundColor3 = SelectedTheme.SecondaryElementStroke
+		HeliXGui.Main.Topbar.Settings.ImageColor3 = SelectedTheme.TextMuted
+		HeliXGui.Main.Topbar.Divider.BackgroundColor3 = SelectedTheme.SecondaryElementStroke
 	end
 
 	Main.Search.BackgroundColor3 = SelectedTheme.InputBackground
@@ -979,7 +979,7 @@ local function ChangeTheme(Theme)
 		Main.Notice.BackgroundColor3 = SelectedTheme.SecondaryElementBackground
 	end
 
-	for _, text in ipairs(HeliXLib:GetDescendants()) do
+	for _, text in ipairs(HeliXGui:GetDescendants()) do
 		if text.Parent.Parent ~= Notifications then
 			if text:IsA('TextLabel') or text:IsA('TextBox') then
 				styleTypography(text)
@@ -1163,7 +1163,7 @@ local function LoadConfiguration(Configuration)
 	if not success then warn('HeliX had an issue decoding the configuration file, please try deleting the file and reopening the interface.') return end
 
 	-- Iterate through current UI elements' flags
-	for FlagName, Flag in pairs(HeliXLib.Flags) do
+	for FlagName, Flag in pairs(HeliXGui.Flags) do
 		local FlagValue = Data[FlagName]
 
 		if (typeof(FlagValue) == 'boolean' and FlagValue == false) or FlagValue then
@@ -1181,7 +1181,7 @@ local function LoadConfiguration(Configuration)
 		else
 			warn("HeliX | Unable to find '"..FlagName.. "' in the save file.")
 			print("The error above may not be an issue if new elements have been added or not been set values.")
-			--HeliXLib:Notify({Title = "HeliXLib Flags", Content = "HeliXLib was unable to find '"..FlagName.. "' in the save file. Check HeliXLib.menu/discord for help.", Image = 3944688398})
+			--HeliXGui:Notify({Title = "HeliXGui Flags", Content = "HeliXGui was unable to find '"..FlagName.. "' in the save file. Check HeliXGui.menu/discord for help.", Image = 3944688398})
 		end
 	end
 
@@ -1196,7 +1196,7 @@ local function SaveConfiguration()
 	end
 
 	local Data = {}
-	for i, v in pairs(HeliXLib.Flags) do
+	for i, v in pairs(HeliXGui.Flags) do
 		if v.Type == "ColorPicker" then
 			Data[i] = PackColor(v.Color)
 		else
@@ -1459,9 +1459,9 @@ local function Hide(notify: boolean?)
 	Debounce = true
 	if notify then
 		if useMobilePrompt then 
-			HeliXLib:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping 'Show'.", Duration = 7, Image = 4400697855})
+			HeliXGui:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping 'Show'.", Duration = 7, Image = 4400697855})
 		else
-			HeliXLib:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping " .. tostring(getSetting("General", "HeliXLibOpen")) .. ".", Duration = 7, Image = 4400697855})
+			HeliXGui:Notify({Title = "Interface Hidden", Content = "The interface has been hidden, you can unhide the interface by tapping " .. tostring(getSetting("General", "HeliXGuiOpen")) .. ".", Duration = 7, Image = 4400697855})
 		end
 	end
 
@@ -1621,7 +1621,7 @@ local function saveSettings() -- Save settings to config file
 				script.Parent['get.val'].Value = encoded
 			end
 		end
-		callSafely(writefile, HeliXLibFolder..'/settings'..ConfigurationExtension, encoded)
+		callSafely(writefile, HeliXGuiFolder..'/settings'..ConfigurationExtension, encoded)
 	end
 end
 
@@ -1717,22 +1717,22 @@ local function fadeOutKeyUI(KeyMain)
 end
 
 function HeliXLib:CreateWindow(Settings)
-	if HeliXLib:FindFirstChild('Loading') then
-		if getgenv and not getgenv().HeliXLibCached then
-			HeliXLib.Enabled = true
-			HeliXLib.Loading.Visible = true
+	if HeliXGui:FindFirstChild('Loading') then
+		if getgenv and not getgenv().HeliXGuiCached then
+			HeliXGui.Enabled = true
+			HeliXGui.Loading.Visible = true
 
 			task.wait(1.4)
-			HeliXLib.Loading.Visible = false
+			HeliXGui.Loading.Visible = false
 		end
 	end
 
-	if getgenv then getgenv().HeliXLibCached = true end
+	if getgenv then getgenv().HeliXGuiCached = true end
 
 	if not correctBuild and not Settings.DisableBuildWarnings then
 		task.delay(3, 
 			function() 
-				HeliXLib:Notify({Title = 'Build Mismatch', Content = 'HeliX may encounter issues as you are running an incompatible interface version ('.. ((HeliXLib:FindFirstChild('Build') and HeliXLib.Build.Value) or 'No Build') ..').\n\nThis version of HeliX is intended for interface build '..InterfaceBuild..'.\n\nTry rejoining and then run the script twice.', Image = 4335487866, Duration = 15})		
+				HeliXGui:Notify({Title = 'Build Mismatch', Content = 'HeliX may encounter issues as you are running an incompatible interface version ('.. ((HeliXGui:FindFirstChild('Build') and HeliXGui.Build.Value) or 'No Build') ..').\n\nThis version of HeliX is intended for interface build '..InterfaceBuild..'.\n\nTry rejoining and then run the script twice.', Image = 4335487866, Duration = 15})		
 			end)
 	end
 
@@ -1743,16 +1743,16 @@ function HeliXLib:CreateWindow(Settings)
 			assert(pcall(function()
 				return Enum.KeyCode[keybind]
 			end), "ToggleUIKeybind must be a valid KeyCode")
-			overrideSetting("General", "HeliXLibOpen", keybind)
+			overrideSetting("General", "HeliXGuiOpen", keybind)
 		elseif typeof(keybind) == "EnumItem" then
 			assert(keybind.EnumType == Enum.KeyCode, "ToggleUIKeybind must be a KeyCode enum")
-			overrideSetting("General", "HeliXLibOpen", keybind.Name)
+			overrideSetting("General", "HeliXGuiOpen", keybind.Name)
 		else
 			error("ToggleUIKeybind must be a string or KeyCode enum")
 		end
 	end
 
-	ensureFolder(HeliXLibFolder)
+	ensureFolder(HeliXGuiFolder)
 
 	local Passthrough = false
 	Topbar.Title.Text = Settings.Name
@@ -1847,9 +1847,9 @@ function HeliXLib:CreateWindow(Settings)
 	end
 
 	if Settings.Discord and Settings.Discord.Enabled and not useStudio and not secureMode then
-		ensureFolder(HeliXLibFolder.."/Discord Invites")
+		ensureFolder(HeliXGuiFolder.."/Discord Invites")
 
-		if not callSafely(isfile, HeliXLibFolder.."/Discord Invites".."/"..Settings.Discord.Invite..ConfigurationExtension) then
+		if not callSafely(isfile, HeliXGuiFolder.."/Discord Invites".."/"..Settings.Discord.Invite..ConfigurationExtension) then
 			if requestFunc then
 				pcall(function()
 					requestFunc({
@@ -1869,7 +1869,7 @@ function HeliXLib:CreateWindow(Settings)
 			end
 
 			if Settings.Discord.RememberJoins then -- We do logic this way so if the developer changes this setting, the user still won't be prompted, only new users
-				callSafely(writefile, HeliXLibFolder.."/Discord Invites".."/"..Settings.Discord.Invite..ConfigurationExtension,"HeliXLib RememberJoins is true for this invite, this invite will not ask you to join again")
+				callSafely(writefile, HeliXGuiFolder.."/Discord Invites".."/"..Settings.Discord.Invite..ConfigurationExtension,"HeliXGui RememberJoins is true for this invite, this invite will not ask you to join again")
 			end
 		end
 	end
@@ -1880,7 +1880,7 @@ function HeliXLib:CreateWindow(Settings)
 			return
 		end
 
-		ensureFolder(HeliXLibFolder.."/Key System")
+		ensureFolder(HeliXGuiFolder.."/Key System")
 
 		if typeof(Settings.KeySettings.Key) == "string" then Settings.KeySettings.Key = {Settings.KeySettings.Key} end
 
@@ -1901,9 +1901,9 @@ function HeliXLib:CreateWindow(Settings)
 			Settings.KeySettings.FileName = "No file name specified"
 		end
 
-		if callSafely(isfile, HeliXLibFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension) then
+		if callSafely(isfile, HeliXGuiFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension) then
 			for _, MKey in ipairs(Settings.KeySettings.Key) do
-				local savedKeys = callSafely(readfile, HeliXLibFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension)
+				local savedKeys = callSafely(readfile, HeliXGuiFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension)
 				if savedKeys and string.find(savedKeys, MKey) then
 					Passthrough = true
 				end
@@ -1912,13 +1912,13 @@ function HeliXLib:CreateWindow(Settings)
 
 		if not Passthrough and secureMode then
 			warn("HeliX | Secure Mode: Key system requires a valid saved key. The key UI cannot be shown because it depends on external assets.")
-			HeliXLib.Enabled = false
+			HeliXGui.Enabled = false
 			return HeliXLib
 		end
 
 		if not Passthrough then
 			local AttemptsRemaining = Settings.KeySettings.MaxAttempts or 5
-			HeliXLib.Enabled = false
+			HeliXGui.Enabled = false
 			local KeyUI = useStudio and script.Parent:FindFirstChild('Key') or game:GetObjects("rbxassetid://"..tostring(customKeyAssetId or 11380036235))[1]
 
 			KeyUI.Enabled = true
@@ -2021,8 +2021,8 @@ function HeliXLib:CreateWindow(Settings)
 					Passthrough = true
 					KeyMain.Visible = false
 					if Settings.KeySettings.SaveKey then
-						callSafely(writefile, HeliXLibFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension, FoundKey)
-						HeliXLib:Notify({Title = "Access Granted", Content = "The key for this script has been saved successfully.", Image = 3605522284})
+						callSafely(writefile, HeliXGuiFolder.."/Key System".."/"..Settings.KeySettings.FileName..ConfigurationExtension, FoundKey)
+						HeliXGui:Notify({Title = "Access Granted", Content = "The key for this script has been saved successfully.", Image = 3605522284})
 					end
 				else
 					if AttemptsRemaining == 0 then
@@ -2047,7 +2047,7 @@ function HeliXLib:CreateWindow(Settings)
 				fadeOutKeyUI(KeyMain)
 				task.wait(0.51)
 				Passthrough = true
-				HeliXLib:Destroy()
+				HeliXGui:Destroy()
 				KeyUI:Destroy()
 			end)
 		else
@@ -2056,12 +2056,12 @@ function HeliXLib:CreateWindow(Settings)
 	end
 	if Settings.KeySystem then
 		repeat task.wait() until Passthrough
-		if HeliXLibDestroyed then return end
+		if HeliXGuiDestroyed then return end
 	end
 
 	Notifications.Template.Visible = false
 	Notifications.Visible = true
-	HeliXLib.Enabled = true
+	HeliXGui.Enabled = true
 
 	task.wait(0.5)
 	TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
@@ -2216,8 +2216,8 @@ function HeliXLib:CreateWindow(Settings)
 
 			Button.Interact.MouseButton1Click:Connect(function()
 				local Success, Response = pcall(ButtonSettings.Callback)
-				-- Prevents animation from trying to play if the button's callback called HeliXLib:Destroy()
-				if HeliXLibDestroyed then
+				-- Prevents animation from trying to play if the button's callback called HeliXGui:Destroy()
+				if HeliXGuiDestroyed then
 					return
 				end
 				if not Success then
@@ -2492,7 +2492,7 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and ColorPickerSettings.Flag then
-					HeliXLib.Flags[ColorPickerSettings.Flag] = ColorPickerSettings
+					HeliXGui.Flags[ColorPickerSettings.Flag] = ColorPickerSettings
 				end
 			end
 
@@ -2511,7 +2511,7 @@ function HeliXLib:CreateWindow(Settings)
 				TweenService:Create(ColorPicker, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
 			end)
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				for _, rgbinput in ipairs(ColorPicker.RGB:GetChildren()) do
 					if rgbinput:IsA("Frame") then
 						styleInputShell(rgbinput)
@@ -2632,7 +2632,7 @@ function HeliXLib:CreateWindow(Settings)
 				end
 			end
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				Label.BackgroundColor3 = IgnoreTheme and (Color or Label.BackgroundColor3) or SelectedTheme.SecondaryElementBackground
 				Label.UIStroke.Color = IgnoreTheme and (Color or Label.BackgroundColor3) or SelectedTheme.SecondaryElementStroke
 				stylePanel(Label, "control")
@@ -2672,7 +2672,7 @@ function HeliXLib:CreateWindow(Settings)
 				Paragraph.Content.Text = NewParagraphSettings.Content
 			end
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				Paragraph.BackgroundColor3 = SelectedTheme.SecondaryElementBackground
 				Paragraph.UIStroke.Color = SelectedTheme.SecondaryElementStroke
 				stylePanel(Paragraph, "control")
@@ -2761,11 +2761,11 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and InputSettings.Flag then
-					HeliXLib.Flags[InputSettings.Flag] = InputSettings
+					HeliXGui.Flags[InputSettings.Flag] = InputSettings
 				end
 			end
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				styleInputShell(Input.InputFrame)
 				stylePanel(Input, "control")
 			end)
@@ -2998,7 +2998,7 @@ function HeliXLib:CreateWindow(Settings)
 						end
 					end)
 
-					HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+					HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 						DropdownOption.UIStroke.Color = SelectedTheme.ElementStroke
 						stylePanel(DropdownOption, "tab")
 					end)
@@ -3014,7 +3014,7 @@ function HeliXLib:CreateWindow(Settings)
 						droption.BackgroundColor3 = SelectedTheme.DropdownSelected
 					end
 
-					HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+					HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 						if not table.find(DropdownSettings.CurrentOption, droption.Name) then
 							droption.BackgroundColor3 = SelectedTheme.DropdownUnselected
 						else
@@ -3111,11 +3111,11 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and DropdownSettings.Flag then
-					HeliXLib.Flags[DropdownSettings.Flag] = DropdownSettings
+					HeliXGui.Flags[DropdownSettings.Flag] = DropdownSettings
 				end
 			end
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				Dropdown.Toggle.ImageColor3 = SelectedTheme.TextColor
 				Dropdown.Selected.TextColor3 = SelectedTheme.TextMuted
 				stylePanel(Dropdown, "control")
@@ -3247,11 +3247,11 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and KeybindSettings.Flag then
-					HeliXLib.Flags[KeybindSettings.Flag] = KeybindSettings
+					HeliXGui.Flags[KeybindSettings.Flag] = KeybindSettings
 				end
 			end
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				styleInputShell(Keybind.KeybindFrame)
 				stylePanel(Keybind, "control")
 			end)
@@ -3405,13 +3405,13 @@ function HeliXLib:CreateWindow(Settings)
 			if not ToggleSettings.Ext then
 				if Settings.ConfigurationSaving then
 					if Settings.ConfigurationSaving.Enabled and ToggleSettings.Flag then
-						HeliXLib.Flags[ToggleSettings.Flag] = ToggleSettings
+						HeliXGui.Flags[ToggleSettings.Flag] = ToggleSettings
 					end
 				end
 			end
 
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				Toggle.Switch.BackgroundColor3 = SelectedTheme.ToggleBackground
 				stylePanel(Toggle, "control")
 
@@ -3593,11 +3593,11 @@ function HeliXLib:CreateWindow(Settings)
 
 			if Settings.ConfigurationSaving then
 				if Settings.ConfigurationSaving.Enabled and SliderSettings.Flag then
-					HeliXLib.Flags[SliderSettings.Flag] = SliderSettings
+					HeliXGui.Flags[SliderSettings.Flag] = SliderSettings
 				end
 			end
 
-			HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+			HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				if SelectedTheme ~= HeliXLib.Theme.Default then
 					Slider.Main.Shadow.Visible = false
 				end
@@ -3614,7 +3614,7 @@ function HeliXLib:CreateWindow(Settings)
 			return SliderSettings
 		end
 
-		HeliXLib.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
+		HeliXGui.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 			styleTabButton(TabButton, Elements.UIPageLayout.CurrentPage == TabPage)
 		end)
 
@@ -3674,9 +3674,9 @@ function HeliXLib:CreateWindow(Settings)
 	function Window.ModifyTheme(NewTheme)
 		local success = pcall(ChangeTheme, NewTheme)
 		if not success then
-			HeliXLib:Notify({Title = 'Unable to Change Theme', Content = 'We were unable to find that theme on file.', Image = 4400704299})
+			HeliXGui:Notify({Title = 'Unable to Change Theme', Content = 'We were unable to find that theme on file.', Image = 4400704299})
 		else
-			HeliXLib:Notify({Title = 'Theme Changed', Content = 'Successfully changed theme to '..(typeof(NewTheme) == 'string' and NewTheme or 'Custom Theme')..'.', Image = 4483362748})
+			HeliXGui:Notify({Title = 'Theme Changed', Content = 'Successfully changed theme to '..(typeof(NewTheme) == 'string' and NewTheme or 'Custom Theme')..'.', Image = 4483362748})
 		end
 	end
 
@@ -3710,14 +3710,14 @@ end
 
 local hideHotkeyConnection -- Has to be initialized here since the connection is made later in the script
 function HeliXLib:Destroy()
-	HeliXLibDestroyed = true
+	HeliXGuiDestroyed = true
 	if hideHotkeyConnection then
 		hideHotkeyConnection:Disconnect()
 	end
 	for _, connection in keybindConnections do
 		connection:Disconnect()
 	end
-	HeliXLib:Destroy()
+	HeliXGui:Destroy()
 end
 
 Topbar.ChangeSize.MouseButton1Click:Connect(function()
@@ -3812,7 +3812,7 @@ Topbar.Hide.MouseButton1Click:Connect(function()
 end)
 
 hideHotkeyConnection = UserInputService.InputBegan:Connect(function(input, processed)
-	if (input.KeyCode == Enum.KeyCode[getSetting("General", "HeliXLibOpen")]) and not processed then
+	if (input.KeyCode == Enum.KeyCode[getSetting("General", "HeliXGuiOpen")]) and not processed then
 		if Debounce then return end
 		if Hidden then
 			Hidden = false
@@ -3874,15 +3874,15 @@ function HeliXLib:LoadConfiguration()
 				end
 			else
 				notified = true
-				HeliXLib:Notify({Title = "HeliX Configurations", Content = "We couldn't enable configuration saving because your environment does not expose filesystem support.", Image = 4384402990})
+				HeliXGui:Notify({Title = "HeliX Configurations", Content = "We couldn't enable configuration saving because your environment does not expose filesystem support.", Image = 4384402990})
 			end
 		end)
 
 		if success and loaded and not notified then
-			HeliXLib:Notify({Title = "HeliX Configurations", Content = "The configuration file for this script has been loaded from a previous session.", Image = 4384403532})
+			HeliXGui:Notify({Title = "HeliX Configurations", Content = "The configuration file for this script has been loaded from a previous session.", Image = 4384403532})
 		elseif not success and not notified then
 			warn('HeliX Configurations Error | '..tostring(result))
-			HeliXLib:Notify({Title = "HeliX Configurations", Content = "We encountered an issue while loading your configuration.\n\nCheck the Developer Console for more information.", Image = 4384402990})
+			HeliXGui:Notify({Title = "HeliX Configurations", Content = "We encountered an issue while loading your configuration.\n\nCheck the Developer Console for more information.", Image = 4384402990})
 		end
 	end
 
@@ -3896,12 +3896,12 @@ if useStudio then
 	-- Feel free to place your own script here to see how it'd work in Roblox Studio before running it on your execution software.
 
 
-	--local Window = HeliXLib:CreateWindow({
-	--	Name = "HeliXLib Example Window",
-	--	LoadingTitle = "HeliXLib Interface Suite",
+	--local Window = HeliXGui:CreateWindow({
+	--	Name = "HeliXGui Example Window",
+	--	LoadingTitle = "HeliXGui Interface Suite",
 	--	Theme = 'Default',
 	--	Icon = 0,
-	--	LoadingSubtitle = "by HeliXLib",
+	--	LoadingSubtitle = "by HeliXGui",
 	--	ConfigurationSaving = {
 	--		Enabled = true,
 	--		FolderName = nil, -- Create a custom folder for your hub/game
@@ -3917,9 +3917,9 @@ if useStudio then
 	--		Title = "Untitled",
 	--		Subtitle = "Key System",
 	--		Note = "No method of obtaining the key is provided",
-	--		FileName = "Key", -- It is recommended to use something unique as other scripts using HeliXLib may overwrite your key file
+	--		FileName = "Key", -- It is recommended to use something unique as other scripts using HeliXGui may overwrite your key file
 	--		SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
-	--		GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like HeliXLib to get the key from
+	--		GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like HeliXGui to get the key from
 	--		Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
 	--	}
 	--})
@@ -3966,7 +3966,7 @@ if useStudio then
 	--})
 
 
-	----HeliXLib:Notify({Title = "HeliXLib Interface", Content = "Welcome to HeliXLib. These - are the brand new notification design for HeliXLib, with custom sizing and HeliXLib calculated wait times.", Image = 4483362458})
+	----HeliXGui:Notify({Title = "HeliXGui Interface", Content = "Welcome to HeliXGui. These - are the brand new notification design for HeliXGui, with custom sizing and HeliXGui calculated wait times.", Image = 4483362458})
 
 	--local Section = Tab:CreateSection("Section Example")
 
@@ -4114,11 +4114,11 @@ if CEnabled and Main:FindFirstChild('Notice') then
 end
 -- AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA why :(
 --if not useStudio then
---	task.spawn(loadWithTimeout, "https://raw.githubusercontent.com/mkpro76/HeliXLib/refs/heads/request/boost.lua")
+--	task.spawn(loadWithTimeout, "https://raw.githubusercontent.com/mkpro76/HeliXGui/refs/heads/request/boost.lua")
 --end
 
 task.delay(4, function()
-	HeliXLib.LoadConfiguration()
+	HeliXGui.LoadConfiguration()
 	if Main:FindFirstChild('Notice') and Main.Notice.Visible then
 		TweenService:Create(Main.Notice, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut), {Size = UDim2.new(0, 100, 0, 25), Position = UDim2.new(0.5, 0, 0, -100), BackgroundTransparency = 1}):Play()
 		TweenService:Create(Main.Notice.Title, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
@@ -4129,3 +4129,4 @@ task.delay(4, function()
 end)
 
 return HeliXLib
+
